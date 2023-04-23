@@ -26,7 +26,7 @@ namespace TikiCrawler
         static void Main(string[] args)
         {
             //Define total number of product needed to get
-            int totalProductCount = 100;
+            int totalProductCount = 5;
 
             //Create an instance of Chrome driver
             IWebDriver browser = new ChromeDriver();
@@ -36,12 +36,12 @@ namespace TikiCrawler
             //page index
             int currentPage = 1;
 
-            
+
 
             //store product crawled
             var productsData = new List<Product>();
 
-            while (productsData.Count<totalProductCount)
+            while (productsData.Count < totalProductCount)
             {
                 Console.WriteLine("Current page: " + currentPage);
 
@@ -60,10 +60,9 @@ namespace TikiCrawler
                 {
                     break;
                 }
-                //test
                 //list store all product links
                 List<string> listProductLink = new List<string>();
-                int i = 0;
+                int prodIndex = 0;
                 foreach (var product in products)
                 {
                     //string outerHtml = product.GetAttribute("outerHTML");
@@ -76,14 +75,12 @@ namespace TikiCrawler
                     }
                     catch
                     {
-                        Console.WriteLine(product.GetAttribute("outerHTML"));
-                        Console.WriteLine($"Product number {i+1} at page {currentPage} have href not found");
+                        Console.WriteLine($"Product number {prodIndex + 1} at page {currentPage} have href not found");
                     }
-                    i++;
+                    prodIndex++;
                 }
 
                 //Go to each product link
-                //for (int i = 0; i < 5; i++)
                 foreach (var productLink in listProductLink)
                 {
                     if (productsData.Count >= totalProductCount)
@@ -149,24 +146,30 @@ namespace TikiCrawler
                         continue;
                     }
 
+                    var groupImgs = browser.FindElements(By.CssSelector(".review-images img"));
                     //Extract product images
-                    try
+                    foreach (var img in groupImgs)
                     {
-                        var groupImgs = browser.FindElements(By.CssSelector(".review-images img"));
-                        foreach (var img in groupImgs)
+                        try
                         {
                             string imgSrc = img.GetAttribute("src");
+                            Console.WriteLine("Original: " + imgSrc);
                             //Get bigger img from img cdn
-                            imgSrc.Replace("100x100", "600x600");
-                            productImgs.Add(imgSrc);
-                            Console.WriteLine("Image source: " + imgSrc);
+                            string preferredSize = "900x900";
+                            string pattern = @"^(https:\/\/salt\.tikicdn\.com\/cache\/)(\d+x\d+)(\/.*$)";
+                            Regex regex = new Regex(pattern);
+                            string newImageUrl = regex.Replace(imgSrc, $"{regex.Match(imgSrc).Groups[1].Value}{preferredSize}{regex.Match(imgSrc).Groups[3].Value}");
+                            productImgs.Add(newImageUrl);
+                            Console.WriteLine("Image source: " + newImageUrl);
+                        }
+                        catch
+                        {
+                            Console.WriteLine("Image not found");
                         }
                     }
-                    catch
-                    {
-                        Console.WriteLine("Image not found");
+                    if (productImgs.Count == 0)
                         continue;
-                    }
+
 
 
 
@@ -214,12 +217,11 @@ namespace TikiCrawler
                     var product = new Product { Title = productTitle, Brand = productBrand, ImgUrl = productImgs, Description = productDescription, DetailInformation = productDetails, Price = productPrice };
                     //Add to list
                     productsData.Add(product);
-                    System.Threading.Thread.Sleep(3000);
                 }
-                
-                
+
+
                 //Navigate to next page
-                browser.Navigate().GoToUrl("https://tiki.vn/laptop/c8095?page="+ (++currentPage));
+                browser.Navigate().GoToUrl("https://tiki.vn/laptop/c8095?page=" + (++currentPage));
 
             }
             //Config delimiter
