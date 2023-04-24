@@ -78,8 +78,8 @@ namespace TikiCrawler
                 //Go to each product link
                 foreach (var productLink in listProductLink)
                 {
-                    //if (productsData.Count >= totalProductCount)
-                    //    break;
+                    if (productsData.Count >= totalProductCount)
+                        break;
                     //var productLink = listProductLink[i];
                     Console.WriteLine("Going to: " + productLink.ToString());
 
@@ -236,7 +236,7 @@ namespace TikiCrawler
             {
                 Delimiter = "@"
             };
-            using (var writer = new StreamWriter("products.csv"))
+            using (var writer = new StreamWriter(Environment.GetFolderPath(Environment.SpecialFolder.Desktop)+"\\products.csv"))
             using (var csv = new CsvWriter(writer, config))
             {
                 //Write data header
